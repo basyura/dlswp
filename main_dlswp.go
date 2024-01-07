@@ -59,7 +59,7 @@ func main() {
 			fmt.Println(strings.Replace(path, root+"\\", "", 1))
 			fmt.Println("  →", strings.Replace(newPath, root+"\\", "", 1))
 			if err != nil {
-				fmt.Println("Error moving file:", err)
+				fmt.Println("  ❗Error moving file:", err)
 			}
 		}
 	}

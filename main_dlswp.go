@@ -37,7 +37,7 @@ func main() {
 	// Move paths created on the target date to the new folder
 	targetDir := ""
 	paths := getFilePaths(root)
-	isCheckDate := false
+	isCheckDate := true
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {

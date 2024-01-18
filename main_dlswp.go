@@ -37,6 +37,7 @@ func main() {
 	// Move paths created on the target date to the new folder
 	targetDir := ""
 	paths := getFilePaths(root)
+	isCheckDate := false
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {
@@ -45,22 +46,25 @@ func main() {
 			continue
 		}
 
-		if stat.ModTime().Format("2006-01-02") == date {
-			// Create a folder with the target date in the download folder
-			if targetDir == "" {
-				targetDir = filepath.Join(root, "__backup__", date)
-				if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
-					fmt.Println("Error creating folder:", err)
-					return
-				}
+		if isCheckDate && stat.ModTime().Format("2006-01-02") != date {
+			continue
+		}
+
+		// Create a folder with the target date in the download folder
+		if targetDir == "" {
+			targetDir = filepath.Join(root, "__backup__", date)
+			if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
+				fmt.Println("Error creating folder:", err)
+				return
 			}
-			newPath := filepath.Join(targetDir, stat.Name())
-			err := os.Rename(path, newPath)
-			fmt.Println(strings.Replace(path, root+"\\", "", 1))
-			fmt.Println("  →", strings.Replace(newPath, root+"\\", "", 1))
-			if err != nil {
-				fmt.Println("  ❗Error moving file:", err)
-			}
+		}
+
+		newPath := filepath.Join(targetDir, stat.Name())
+		err = os.Rename(path, newPath)
+		fmt.Println(strings.Replace(path, root+"\\", "", 1))
+		fmt.Println("  →", strings.Replace(newPath, root+"\\", "", 1))
+		if err != nil {
+			fmt.Println("  ❗Error moving file:", err)
 		}
 	}
 }

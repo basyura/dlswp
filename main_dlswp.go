@@ -5,10 +5,13 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
+
+var backup_dir_pattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
 func main() {
 	// Check for command line arguments
@@ -28,7 +31,55 @@ func main() {
 		return
 	}
 
-	date := time.Now().AddDate(0, 0, days).Format("2006-01-02")
+	// 対象日
+	date := time.Now().AddDate(0, 0, days)
+	// download → backup へ移動
+	move_downloads_to_backup(root, date)
+	// backup 内の古いディレクトリを削除
+	if err := remove_old_backup(root, date); err != nil {
+		fmt.Println(err)
+	}
+}
+
+func remove_old_backup(root string, date time.Time) error {
+	path := filepath.Join(root, "__backup__")
+	dirs, err := getDirPaths(path)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range dirs {
+		if !backup_dir_pattern.MatchString(v) {
+			continue
+		}
+
+		d, err := time.Parse("2006-01-02", v)
+		if err != nil {
+			fmt.Println("failed to convert : "+v, err)
+			continue
+		}
+
+		if date.Sub(d).Hours() < 24*4 {
+			continue
+		}
+
+		delPath := filepath.Join(root, "__backup__", v)
+		fmt.Println(delPath)
+
+		err = os.RemoveAll(delPath)
+		if err != nil {
+			fmt.Printf("Failed to remove directory: %v\n", err)
+		} else {
+			fmt.Println("Directory successfully removed.")
+		}
+	}
+
+	return nil
+}
+
+func move_downloads_to_backup(root string, targetDate time.Time) {
+
+	date := targetDate.Format("2006-01-02")
 
 	fmt.Println("root :", root)
 	fmt.Println("date :", date)
@@ -47,7 +98,7 @@ func main() {
 		}
 
 		if isCheckDate && stat.ModTime().Format("2006-01-02") != date {
-			continue
+			//continue
 		}
 
 		// Create a folder with the target date in the download folder
@@ -88,4 +139,20 @@ func getFilePaths(baseDir string) []string {
 	}
 
 	return paths
+}
+
+func getDirPaths(baseDir string) ([]string, error) {
+	files, err := ioutil.ReadDir(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	paths := []string{}
+	for _, file := range files {
+		if file.IsDir() {
+			paths = append(paths, file.Name())
+		}
+	}
+
+	return paths, nil
 }

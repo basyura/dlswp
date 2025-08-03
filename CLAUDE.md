@@ -21,7 +21,10 @@ Key functions:
 ## Build and Run Commands
 
 ```bash
-# Build the executable
+# Build the executable (creates dlswp.exe)
+go build -o dlswp.exe main_dlswp.go
+
+# Alternative build (creates main_dlswp.exe)
 go build main_dlswp.go
 
 # Run with default Downloads folder (today's files)
@@ -32,6 +35,9 @@ go run main_dlswp.go -1
 
 # Run with custom directory
 go run main_dlswp.go 0 "C:\custom\path"
+
+# Run the built executable
+dlswp.exe 0
 ```
 
 ## Command Line Arguments

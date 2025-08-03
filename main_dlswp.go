@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+const (
+	defaultRetentionDays = 4
+	backupDirName       = "__backup__"
+	dateFormat          = "2006-01-02"
+)
 var backup_dir_pattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
 func getDefaultDownloadsPath() string {
@@ -50,9 +55,9 @@ func main() {
 		return
 	}
 
-	// 引数が0の場合は4として扱う
+	// 引数が0の場合はデフォルト保持日数として扱う
 	if days == 0 {
-		days = 4
+		days = defaultRetentionDays
 	}
 
 	// download → backup へ移動
@@ -67,7 +72,7 @@ func main() {
 }
 
 func removeOldBackup(root string, daysToKeep int) error {
-	path := filepath.Join(root, "__backup__")
+	path := filepath.Join(root, backupDirName)
 	dirs, err := getDirPaths(path)
 	if err != nil {
 		return err
@@ -78,7 +83,7 @@ func removeOldBackup(root string, daysToKeep int) error {
 			continue
 		}
 
-		d, err := time.Parse("2006-01-02", v)
+		d, err := time.Parse(dateFormat, v)
 		if err != nil {
 			fmt.Println("failed to convert : "+v, err)
 			continue
@@ -90,7 +95,7 @@ func removeOldBackup(root string, daysToKeep int) error {
 			continue
 		}
 
-		delPath := filepath.Join(root, "__backup__", v)
+		delPath := filepath.Join(root, backupDirName, v)
 		fmt.Println(delPath)
 
 		err = os.RemoveAll(delPath)
@@ -106,7 +111,7 @@ func removeOldBackup(root string, daysToKeep int) error {
 
 func moveDownloadsToBackup(root string) error {
 
-	date := time.Now().Format("2006-01-02")
+	date := time.Now().Format(dateFormat)
 
 	fmt.Println("root :", root)
 	fmt.Println("date :", date)
@@ -129,7 +134,7 @@ func moveDownloadsToBackup(root string) error {
 
 		// Create a folder with the target date in the download folder
 		if targetDir == "" {
-			targetDir = filepath.Join(root, "__backup__", date)
+			targetDir = filepath.Join(root, backupDirName, date)
 			if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 				return fmt.Errorf("error creating folder %s: %w", targetDir, err)
 			}

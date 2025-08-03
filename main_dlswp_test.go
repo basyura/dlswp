@@ -165,7 +165,7 @@ func TestRemoveOldBackupEmptyDir(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Create __backup__ directory but keep it empty
-	backupDir := filepath.Join(tempDir, "__backup__")
+	backupDir := filepath.Join(tempDir, backupDirName)
 	err = os.Mkdir(backupDir, 0755)
 	if err != nil {
 		t.Fatalf("Failed to create backup directory: %v", err)
@@ -195,7 +195,7 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 
 	// Create some date directories
 	now := time.Now()
-	oldDate := now.AddDate(0, 0, -5) // 5 days ago (should be removed with daysToKeep=4)
+	oldDate := now.AddDate(0, 0, -5)    // 5 days ago (should be removed with daysToKeep=4)
 	recentDate := now.AddDate(0, 0, -3) // 3 days ago (should be kept with daysToKeep=4)
 
 	oldDateStr := oldDate.Format("2006-01-02")
@@ -373,7 +373,7 @@ func TestZeroArgumentTreatedAsFour(t *testing.T) {
 
 	// Create test directories to verify 4-day retention behavior
 	now := time.Now()
-	oldDate := now.AddDate(0, 0, -5) // 5 days ago (should be removed with 4 days retention)
+	oldDate := now.AddDate(0, 0, -5)    // 5 days ago (should be removed with 4 days retention)
 	recentDate := now.AddDate(0, 0, -3) // 3 days ago (should be kept with 4 days retention)
 
 	oldDateStr := oldDate.Format("2006-01-02")
@@ -426,10 +426,10 @@ func TestRemoveOldBackupSpecificDays(t *testing.T) {
 
 	// Create test directories with relative dates to today
 	now := time.Now()
-	
+
 	// Test with daysToKeep = 3
 	dates := []struct {
-		date      time.Time
+		date       time.Time
 		shouldKeep bool
 	}{
 		{now.AddDate(0, 0, -5), false}, // 5 days ago (should be removed)
@@ -462,7 +462,7 @@ func TestRemoveOldBackupSpecificDays(t *testing.T) {
 	for i, d := range dates {
 		dir := dirs[i]
 		_, err := os.Stat(dir)
-		
+
 		if d.shouldKeep {
 			if err != nil {
 				t.Errorf("Directory %s should still exist: %v", d.date.Format("2006-01-02"), err)

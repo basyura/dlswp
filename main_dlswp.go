@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -121,7 +120,7 @@ func move_downloads_to_backup(root string, targetDate time.Time) {
 }
 
 func getFilePaths(baseDir string) []string {
-	files, err := ioutil.ReadDir(baseDir)
+	files, err := os.ReadDir(baseDir)
 
 	if err != nil {
 		fmt.Println("read error :", baseDir)
@@ -142,7 +141,7 @@ func getFilePaths(baseDir string) []string {
 }
 
 func getDirPaths(baseDir string) ([]string, error) {
-	files, err := ioutil.ReadDir(baseDir)
+	files, err := os.ReadDir(baseDir)
 	if err != nil {
 		return nil, err
 	}

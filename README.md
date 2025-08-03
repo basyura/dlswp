@@ -1,52 +1,51 @@
 # dlswp
 
-## 概要
+## Overview
 
-- 溢れかえるダウンロードフォルダ (`%USERPROFILE%/Downloads`) 配下のファイルのバックアップを取りつつ掃除する。
-- 定期実行はしないのでタスクスケジューラ等を使用する必要あり。
+- Cleans up overflowing Downloads folder (`%USERPROFILE%/Downloads`) by backing up and organizing files.
+- Does not run automatically - requires task scheduler or manual execution for periodic cleaning.
 
-## 仕様
+## Specifications
 
-- windows のみ
-- `__backup__` フォルダを生成して日付ごとのフォルダに移動する
-- `__` 始まりのファイルまたはフォルダは移動対象外とする
-- デフォルトは `%USERPROFILE%/Downloads` フォルダを対象とする
-- デフォルトで 3 日分のバックアップを保持し、それより過去のファイルを削除する
+- Windows only
+- Creates `__backup__` folder and moves files to date-based subdirectories
+- Files or folders starting with `__` are excluded from processing
+- Default target is `%USERPROFILE%/Downloads` folder
+- Keeps 3 days of backups by default and removes older files
 
-## 実行時引数
+## Command Line Arguments
 
-### 形式
+### Format
 ```
-dlswp [日数オフセット] [対象ディレクトリ]
+dlswp [days_offset] [target_directory]
 ```
 
-### 引数の詳細
+### Argument Details
 
-- **第1引数（日数オフセット）**: オプション（省略時は "0" = 今日）
-  - 数値で指定（正数・負数・0）
-  - 今日を基準とした日数のオフセット
-- **第2引数（対象ディレクトリ）**: オプション（省略時は `%USERPROFILE%\Downloads`）
-  - 処理対象のルートディレクトリパス
+- **First argument (days_offset)**: Optional (defaults to "0" = today)
+  - Specify as number (positive, negative, or 0)
+  - Days offset from today as reference
+- **Second argument (target_directory)**: Optional (defaults to `%USERPROFILE%\Downloads`)
+  - Root directory path to process
 
-### 使用例
+### Usage Examples
 
 ```bash
-# 引数なし（今日のファイルを対象、Downloadsフォルダ）
+# No arguments (target today's files, Downloads folder)
 dlswp
 
-# 今日のファイルを対象
+# Target today's files
 dlswp 0
 
-# 昨日のファイルを対象
+# Target yesterday's files
 dlswp -1
 
-# 3日前のファイルを対象
+# Target files from 3 days ago
 dlswp -3
 
-# カスタムディレクトリを指定
+# Specify custom directory
 dlswp 0 "C:\MyFolder"
 
-# 昨日のファイル、カスタムディレクトリ
+# Yesterday's files, custom directory
 dlswp -1 "D:\Documents"
 ```
-

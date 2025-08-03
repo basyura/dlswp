@@ -56,7 +56,10 @@ func main() {
 	}
 
 	// download → backup へ移動
-	move_downloads_to_backup(root)
+	if err := move_downloads_to_backup(root); err != nil {
+		fmt.Println("Error moving files to backup:", err)
+		return
+	}
 	// backup 内の古いディレクトリを削除
 	if err := remove_old_backup(root, days); err != nil {
 		fmt.Println(err)
@@ -101,7 +104,7 @@ func remove_old_backup(root string, daysToKeep int) error {
 	return nil
 }
 
-func move_downloads_to_backup(root string) {
+func move_downloads_to_backup(root string) error {
 
 	date := time.Now().Format("2006-01-02")
 
@@ -111,7 +114,11 @@ func move_downloads_to_backup(root string) {
 
 	// Move paths created on the target date to the new folder
 	targetDir := ""
-	paths := getFilePaths(root)
+	paths, err := getFilePaths(root)
+	if err != nil {
+		return fmt.Errorf("failed to get file paths: %w", err)
+	}
+
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {
@@ -124,8 +131,7 @@ func move_downloads_to_backup(root string) {
 		if targetDir == "" {
 			targetDir = filepath.Join(root, "__backup__", date)
 			if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
-				fmt.Println("Error creating folder:", err)
-				return
+				return fmt.Errorf("error creating folder %s: %w", targetDir, err)
 			}
 		}
 
@@ -140,14 +146,15 @@ func move_downloads_to_backup(root string) {
 			fmt.Println("  ❗Error moving file:", err)
 		}
 	}
+
+	return nil
 }
 
-func getFilePaths(baseDir string) []string {
+func getFilePaths(baseDir string) ([]string, error) {
 	files, err := os.ReadDir(baseDir)
 
 	if err != nil {
-		fmt.Println("read error :", baseDir)
-		os.Exit(1)
+		return nil, fmt.Errorf("failed to read directory %s: %w", baseDir, err)
 	}
 
 	var paths []string
@@ -160,7 +167,7 @@ func getFilePaths(baseDir string) []string {
 		paths = append(paths, path)
 	}
 
-	return paths
+	return paths, nil
 }
 
 func getDirPaths(baseDir string) ([]string, error) {

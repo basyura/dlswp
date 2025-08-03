@@ -124,7 +124,10 @@ func TestGetFilePaths(t *testing.T) {
 	}
 
 	// Test getFilePaths
-	paths := getFilePaths(tempDir)
+	paths, err := getFilePaths(tempDir)
+	if err != nil {
+		t.Fatalf("getFilePaths failed: %v", err)
+	}
 
 	expectedCount := len(testFiles) + len(testDirs)
 	if len(paths) != expectedCount {
@@ -293,7 +296,10 @@ func TestMoveDownloadsToBackup(t *testing.T) {
 	}
 
 	// Run move_downloads_to_backup
-	move_downloads_to_backup(tempDir)
+	err = move_downloads_to_backup(tempDir)
+	if err != nil {
+		t.Fatalf("move_downloads_to_backup failed: %v", err)
+	}
 
 	// Check that __backup__ directory was created with today's date
 	todayStr := time.Now().Format("2006-01-02")
@@ -335,7 +341,10 @@ func TestMoveDownloadsToBackupEmptyDir(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Run move_downloads_to_backup on empty directory
-	move_downloads_to_backup(tempDir)
+	err = move_downloads_to_backup(tempDir)
+	if err != nil {
+		t.Fatalf("move_downloads_to_backup failed: %v", err)
+	}
 
 	// Check that no __backup__ directory was created (since no files to move)
 	backupDir := filepath.Join(tempDir, "__backup__")

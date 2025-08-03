@@ -172,7 +172,7 @@ func TestRemoveOldBackupEmptyDir(t *testing.T) {
 	}
 
 	// Test with 4 days to keep (should not remove anything in empty dir)
-	err = remove_old_backup(tempDir, 4)
+	err = removeOldBackup(tempDir, 4)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}
@@ -223,7 +223,7 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 	}
 
 	// Run remove_old_backup with 4 days to keep
-	err = remove_old_backup(tempDir, 4)
+	err = removeOldBackup(tempDir, 4)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}
@@ -253,7 +253,7 @@ func TestRemoveOldBackupNonExistentBackupDir(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Test with non-existent __backup__ directory
-	err = remove_old_backup(tempDir, 4)
+	err = removeOldBackup(tempDir, 4)
 	if err == nil {
 		t.Error("Expected error for non-existent backup directory, got nil")
 	}
@@ -296,7 +296,7 @@ func TestMoveDownloadsToBackup(t *testing.T) {
 	}
 
 	// Run move_downloads_to_backup
-	err = move_downloads_to_backup(tempDir)
+	err = moveDownloadsToBackup(tempDir)
 	if err != nil {
 		t.Fatalf("move_downloads_to_backup failed: %v", err)
 	}
@@ -341,7 +341,7 @@ func TestMoveDownloadsToBackupEmptyDir(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Run move_downloads_to_backup on empty directory
-	err = move_downloads_to_backup(tempDir)
+	err = moveDownloadsToBackup(tempDir)
 	if err != nil {
 		t.Fatalf("move_downloads_to_backup failed: %v", err)
 	}
@@ -393,7 +393,7 @@ func TestZeroArgumentTreatedAsFour(t *testing.T) {
 	}
 
 	// Test with 4 days (what 0 should become)
-	err = remove_old_backup(tempDir, 4)
+	err = removeOldBackup(tempDir, 4)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}
@@ -453,7 +453,7 @@ func TestRemoveOldBackupSpecificDays(t *testing.T) {
 	}
 
 	// Run remove_old_backup with 3 days to keep
-	err = remove_old_backup(tempDir, 3)
+	err = removeOldBackup(tempDir, 3)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}

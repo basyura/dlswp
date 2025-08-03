@@ -56,17 +56,17 @@ func main() {
 	}
 
 	// download → backup へ移動
-	if err := move_downloads_to_backup(root); err != nil {
+	if err := moveDownloadsToBackup(root); err != nil {
 		fmt.Println("Error moving files to backup:", err)
 		return
 	}
 	// backup 内の古いディレクトリを削除
-	if err := remove_old_backup(root, days); err != nil {
+	if err := removeOldBackup(root, days); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func remove_old_backup(root string, daysToKeep int) error {
+func removeOldBackup(root string, daysToKeep int) error {
 	path := filepath.Join(root, "__backup__")
 	dirs, err := getDirPaths(path)
 	if err != nil {
@@ -104,7 +104,7 @@ func remove_old_backup(root string, daysToKeep int) error {
 	return nil
 }
 
-func move_downloads_to_backup(root string) error {
+func moveDownloadsToBackup(root string) error {
 
 	date := time.Now().Format("2006-01-02")
 

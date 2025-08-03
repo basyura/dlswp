@@ -9,13 +9,13 @@ This is a Go utility called "dlswp" (Downloads Sweeper) that manages Downloads f
 ## Core Functionality
 
 The program performs two main operations:
-1. **Move files to backup**: Moves files from Downloads to `__backup__/YYYY-MM-DD/` folders
-2. **Clean old backups**: Removes backup directories older than 4 days
+1. **Move files to backup**: Moves ALL files from target directory to `__backup__/YYYY-MM-DD/` folders (regardless of modification date)
+2. **Clean old backups**: Removes backup directories older than 4 days from the date calculated by days_offset
 
 Key functions:
 - `getDefaultDownloadsPath()`: Gets OS-specific default Downloads folder path
-- `move_downloads_to_backup()`: Organizes files by moving them to dated backup folders
-- `remove_old_backup()`: Cleans up backup directories older than 4 days
+- `move_downloads_to_backup()`: Moves ALL files to dated backup folders (ignores modification date)
+- `remove_old_backup()`: Cleans up backup directories older than 4 days from reference date
 - `getFilePaths()`: Gets file paths, skipping directories starting with "__"
 - `getDirPaths()`: Gets directory paths for backup cleanup
 
@@ -44,10 +44,10 @@ go build -o dlswp main_dlswp.go
 # Alternative build (creates main_dlswp.exe on Windows, main_dlswp on others)
 go build main_dlswp.go
 
-# Run with default Downloads folder (today's files)
+# Run with default Downloads folder (all files → __backup__/today's date/)
 go run main_dlswp.go 0
 
-# Run with days offset (negative for past days)
+# Run with days offset (all files → __backup__/calculated date/)
 go run main_dlswp.go -1
 
 # Run with custom directory
@@ -60,6 +60,8 @@ go run main_dlswp.go 0 "/path/to/custom/directory"
 ## Command Line Arguments
 
 - First argument: Days offset from today (0 = today, -1 = yesterday, etc.)
+  - Used for backup folder name and cleanup reference date
+  - Does NOT filter files by modification date - ALL files are moved
 - Second argument (optional): Root directory path (defaults to OS-specific Downloads folder)
 
 ## Platform and Requirements
@@ -77,7 +79,7 @@ go run main_dlswp.go 0 "/path/to/custom/directory"
 - Uses standard library packages: fmt, os, path/filepath, regexp, runtime, strconv, strings, time
 - Cross-platform OS detection using `runtime.GOOS` for proper Downloads folder path resolution
 - Date validation using regex pattern `^\d{4}-\d{2}-\d{2}$`
-- File organization based on modification time
+- File organization: moves ALL files regardless of modification time (date check is commented out)
 - Platform-agnostic path handling using `filepath.Separator`
 - Skips files/directories prefixed with "__" to avoid interfering with its own backup structure
 - Creates `__backup__` folder structure with date-based subdirectories (YYYY-MM-DD format)

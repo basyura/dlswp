@@ -45,17 +45,20 @@ func main() {
 		return
 	}
 
-	// 対象日
-	date := time.Now().AddDate(0, 0, days)
+	if days < 0 {
+		fmt.Println("Please specify a value of 0 or greater")
+		return
+	}
+
 	// download → backup へ移動
-	move_downloads_to_backup(root, date)
+	move_downloads_to_backup(root)
 	// backup 内の古いディレクトリを削除
-	if err := remove_old_backup(root, date); err != nil {
+	if err := remove_old_backup(root, days); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func remove_old_backup(root string, date time.Time) error {
+func remove_old_backup(root string, daysToKeep int) error {
 	path := filepath.Join(root, "__backup__")
 	dirs, err := getDirPaths(path)
 	if err != nil {
@@ -73,7 +76,9 @@ func remove_old_backup(root string, date time.Time) error {
 			continue
 		}
 
-		if date.Sub(d).Hours() < 24*4 {
+		// 今日から指定日数分だけ過去の日付を削除対象とする
+		cutoffDate := time.Now().AddDate(0, 0, -daysToKeep)
+		if !d.Before(cutoffDate) {
 			continue
 		}
 
@@ -91,9 +96,9 @@ func remove_old_backup(root string, date time.Time) error {
 	return nil
 }
 
-func move_downloads_to_backup(root string, targetDate time.Time) {
+func move_downloads_to_backup(root string) {
 
-	date := targetDate.Format("2006-01-02")
+	date := time.Now().Format("2006-01-02")
 
 	fmt.Println("root :", root)
 	fmt.Println("date :", date)
@@ -102,17 +107,12 @@ func move_downloads_to_backup(root string, targetDate time.Time) {
 	// Move paths created on the target date to the new folder
 	targetDir := ""
 	paths := getFilePaths(root)
-	isCheckDate := true
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {
 			fmt.Println(path)
 			fmt.Println(err)
 			continue
-		}
-
-		if isCheckDate && stat.ModTime().Format("2006-01-02") != date {
-			//continue
 		}
 
 		// Create a folder with the target date in the download folder

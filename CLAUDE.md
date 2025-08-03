@@ -9,13 +9,13 @@ This is a Go utility called "dlswp" (Downloads Sweeper) that manages Downloads f
 ## Core Functionality
 
 The program performs two main operations:
-1. **Move files to backup**: Moves ALL files from target directory to `__backup__/YYYY-MM-DD/` folders (regardless of modification date)
-2. **Clean old backups**: Removes backup directories older than 4 days from the date calculated by days_offset
+1. **Move files to backup**: Moves ALL files from target directory to `__backup__/today's date/` folder (regardless of modification date)
+2. **Clean old backups**: Removes backup directories older than specified days from today
 
 Key functions:
 - `getDefaultDownloadsPath()`: Gets OS-specific default Downloads folder path
-- `move_downloads_to_backup()`: Moves ALL files to dated backup folders (ignores modification date)
-- `remove_old_backup()`: Cleans up backup directories older than 4 days from reference date
+- `move_downloads_to_backup()`: Moves ALL files to today's date backup folder (ignores modification date)
+- `remove_old_backup()`: Cleans up backup directories older than specified days from today
 - `getFilePaths()`: Gets file paths, skipping directories starting with "__"
 - `getDirPaths()`: Gets directory paths for backup cleanup
 
@@ -44,11 +44,14 @@ go build -o dlswp main_dlswp.go
 # Alternative build (creates main_dlswp.exe on Windows, main_dlswp on others)
 go build main_dlswp.go
 
-# Run with default Downloads folder (all files → __backup__/today's date/)
+# No arguments: same as "0" - move all files to today's backup, remove all old backups
+go run main_dlswp.go
+
+# Explicit 0: move all files to today's backup, remove all old backups
 go run main_dlswp.go 0
 
-# Run with days offset (all files → __backup__/calculated date/)
-go run main_dlswp.go -1
+# Keep 3 days: move all files to today's backup, keep last 3 days of backups
+go run main_dlswp.go 3
 
 # Run with custom directory
 # Windows
@@ -59,8 +62,11 @@ go run main_dlswp.go 0 "/path/to/custom/directory"
 
 ## Command Line Arguments
 
-- First argument: Days offset from today (0 = today, -1 = yesterday, etc.)
-  - Used for backup folder name and cleanup reference date
+- First argument: Days to keep (0 or positive values only, negative values rejected)
+  - Optional: defaults to "0" when not specified
+  - Used for cleanup: removes backup folders older than specified days from today
+  - Files are always moved to today's date backup folder
+  - Special case: 0 = keep only today's backup, remove all older backups
   - Does NOT filter files by modification date - ALL files are moved
 - Second argument (optional): Root directory path (defaults to OS-specific Downloads folder)
 
@@ -79,8 +85,10 @@ go run main_dlswp.go 0 "/path/to/custom/directory"
 - Uses standard library packages: fmt, os, path/filepath, regexp, runtime, strconv, strings, time
 - Cross-platform OS detection using `runtime.GOOS` for proper Downloads folder path resolution
 - Date validation using regex pattern `^\d{4}-\d{2}-\d{2}$`
-- File organization: moves ALL files regardless of modification time (date check is commented out)
+- File organization: moves ALL files to today's date folder regardless of modification time
 - Platform-agnostic path handling using `filepath.Separator`
 - Skips files/directories prefixed with "__" to avoid interfering with its own backup structure
 - Creates `__backup__` folder structure with date-based subdirectories (YYYY-MM-DD format)
-- Automatically removes backup directories older than 4 days
+- Automatically removes backup directories older than specified days from today
+- Default behavior: when no arguments provided, acts as if "0" was specified (most aggressive cleanup)
+- Validates arguments: rejects negative values with error message

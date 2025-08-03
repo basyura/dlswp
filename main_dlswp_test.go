@@ -168,8 +168,8 @@ func TestRemoveOldBackupEmptyDir(t *testing.T) {
 		t.Fatalf("Failed to create backup directory: %v", err)
 	}
 
-	// Test with current date (should not remove anything)
-	err = remove_old_backup(tempDir, time.Now())
+	// Test with 0 days to keep (should not remove anything)
+	err = remove_old_backup(tempDir, 0)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}
@@ -192,8 +192,8 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 
 	// Create some date directories
 	now := time.Now()
-	oldDate := now.AddDate(0, 0, -5) // 5 days ago (should be removed)
-	recentDate := now.AddDate(0, 0, -2) // 2 days ago (should be kept)
+	oldDate := now.AddDate(0, 0, -2) // 2 days ago (should be removed with daysToKeep=1)
+	recentDate := now // today (should be kept with daysToKeep=1)
 
 	oldDateStr := oldDate.Format("2006-01-02")
 	recentDateStr := recentDate.Format("2006-01-02")
@@ -219,8 +219,8 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 		t.Fatalf("Failed to create invalid date directory: %v", err)
 	}
 
-	// Run remove_old_backup
-	err = remove_old_backup(tempDir, now)
+	// Run remove_old_backup with 1 day to keep
+	err = remove_old_backup(tempDir, 1)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}
@@ -230,9 +230,9 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 		t.Errorf("Old directory %s should have been removed", oldDateStr)
 	}
 
-	// Check that recent directory still exists
+	// Check that today's directory still exists (within 1 day)
 	if _, err := os.Stat(recentDir); err != nil {
-		t.Errorf("Recent directory %s should still exist: %v", recentDateStr, err)
+		t.Errorf("Today's directory %s should still exist: %v", recentDateStr, err)
 	}
 
 	// Check that invalid directory still exists
@@ -250,8 +250,162 @@ func TestRemoveOldBackupNonExistentBackupDir(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Test with non-existent __backup__ directory
-	err = remove_old_backup(tempDir, time.Now())
+	err = remove_old_backup(tempDir, 1)
 	if err == nil {
 		t.Error("Expected error for non-existent backup directory, got nil")
+	}
+}
+
+func TestMoveDownloadsToBackup(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "dlswp_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create test files
+	testFiles := []string{"file1.txt", "file2.txt", "document.pdf"}
+	for _, file := range testFiles {
+		f, err := os.Create(filepath.Join(tempDir, file))
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", file, err)
+		}
+		f.Close()
+	}
+
+	// Create test directories
+	testDirs := []string{"dir1", "dir2"}
+	for _, dir := range testDirs {
+		err := os.Mkdir(filepath.Join(tempDir, dir), 0755)
+		if err != nil {
+			t.Fatalf("Failed to create test directory %s: %v", dir, err)
+		}
+	}
+
+	// Create files/dirs starting with "__" (should be skipped)
+	skipItems := []string{"__backup__", "__temp__"}
+	for _, item := range skipItems {
+		err := os.Mkdir(filepath.Join(tempDir, item), 0755)
+		if err != nil {
+			t.Fatalf("Failed to create test directory %s: %v", item, err)
+		}
+	}
+
+	// Run move_downloads_to_backup
+	move_downloads_to_backup(tempDir)
+
+	// Check that __backup__ directory was created with today's date
+	todayStr := time.Now().Format("2006-01-02")
+	backupDir := filepath.Join(tempDir, "__backup__", todayStr)
+	if _, err := os.Stat(backupDir); err != nil {
+		t.Errorf("Backup directory %s should have been created: %v", backupDir, err)
+	}
+
+	// Check that all test files and directories were moved
+	allExpected := append(testFiles, testDirs...)
+	for _, expected := range allExpected {
+		movedPath := filepath.Join(backupDir, expected)
+		if _, err := os.Stat(movedPath); err != nil {
+			t.Errorf("Expected item %s should have been moved to backup: %v", expected, err)
+		}
+
+		// Check that original item no longer exists in root
+		originalPath := filepath.Join(tempDir, expected)
+		if _, err := os.Stat(originalPath); !os.IsNotExist(err) {
+			t.Errorf("Original item %s should have been moved from root directory", expected)
+		}
+	}
+
+	// Check that __ prefixed items were not moved
+	for _, skipItem := range skipItems {
+		skipPath := filepath.Join(tempDir, skipItem)
+		if _, err := os.Stat(skipPath); err != nil {
+			t.Errorf("Skip item %s should still exist in root directory: %v", skipItem, err)
+		}
+	}
+}
+
+func TestMoveDownloadsToBackupEmptyDir(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "dlswp_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Run move_downloads_to_backup on empty directory
+	move_downloads_to_backup(tempDir)
+
+	// Check that no __backup__ directory was created (since no files to move)
+	backupDir := filepath.Join(tempDir, "__backup__")
+	if _, err := os.Stat(backupDir); !os.IsNotExist(err) {
+		t.Error("No backup directory should be created when there are no files to move")
+	}
+}
+
+func TestRemoveOldBackupSpecificDays(t *testing.T) {
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "dlswp_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create __backup__ directory
+	backupDir := filepath.Join(tempDir, "__backup__")
+	err = os.Mkdir(backupDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create backup directory: %v", err)
+	}
+
+	// Create test directories with relative dates to today
+	now := time.Now()
+	
+	// Test with daysToKeep = 3
+	dates := []struct {
+		date      time.Time
+		shouldKeep bool
+	}{
+		{now.AddDate(0, 0, -5), false}, // 5 days ago (should be removed)
+		{now.AddDate(0, 0, -4), false}, // 4 days ago (should be removed)
+		{now.AddDate(0, 0, -3), false}, // 3 days ago (should be removed - cutoff)
+		{now.AddDate(0, 0, -2), true},  // 2 days ago (should be kept)
+		{now.AddDate(0, 0, -1), true},  // 1 day ago (should be kept)
+		{now, true},                    // today (should be kept)
+	}
+
+	// Create directories
+	var dirs []string
+	for _, d := range dates {
+		dateStr := d.date.Format("2006-01-02")
+		dir := filepath.Join(backupDir, dateStr)
+		err = os.Mkdir(dir, 0755)
+		if err != nil {
+			t.Fatalf("Failed to create test directory %s: %v", dateStr, err)
+		}
+		dirs = append(dirs, dir)
+	}
+
+	// Run remove_old_backup with 3 days to keep
+	err = remove_old_backup(tempDir, 3)
+	if err != nil {
+		t.Errorf("remove_old_backup failed: %v", err)
+	}
+
+	// Check results
+	for i, d := range dates {
+		dir := dirs[i]
+		_, err := os.Stat(dir)
+		
+		if d.shouldKeep {
+			if err != nil {
+				t.Errorf("Directory %s should still exist: %v", d.date.Format("2006-01-02"), err)
+			}
+		} else {
+			if !os.IsNotExist(err) {
+				t.Errorf("Directory %s should have been removed", d.date.Format("2006-01-02"))
+			}
+		}
 	}
 }

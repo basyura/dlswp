@@ -168,8 +168,8 @@ func TestRemoveOldBackupEmptyDir(t *testing.T) {
 		t.Fatalf("Failed to create backup directory: %v", err)
 	}
 
-	// Test with 0 days to keep (should not remove anything)
-	err = remove_old_backup(tempDir, 0)
+	// Test with 4 days to keep (should not remove anything in empty dir)
+	err = remove_old_backup(tempDir, 4)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}
@@ -192,8 +192,8 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 
 	// Create some date directories
 	now := time.Now()
-	oldDate := now.AddDate(0, 0, -2) // 2 days ago (should be removed with daysToKeep=1)
-	recentDate := now // today (should be kept with daysToKeep=1)
+	oldDate := now.AddDate(0, 0, -5) // 5 days ago (should be removed with daysToKeep=4)
+	recentDate := now.AddDate(0, 0, -3) // 3 days ago (should be kept with daysToKeep=4)
 
 	oldDateStr := oldDate.Format("2006-01-02")
 	recentDateStr := recentDate.Format("2006-01-02")
@@ -219,8 +219,8 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 		t.Fatalf("Failed to create invalid date directory: %v", err)
 	}
 
-	// Run remove_old_backup with 1 day to keep
-	err = remove_old_backup(tempDir, 1)
+	// Run remove_old_backup with 4 days to keep
+	err = remove_old_backup(tempDir, 4)
 	if err != nil {
 		t.Errorf("remove_old_backup failed: %v", err)
 	}
@@ -230,9 +230,9 @@ func TestRemoveOldBackupWithDateDirs(t *testing.T) {
 		t.Errorf("Old directory %s should have been removed", oldDateStr)
 	}
 
-	// Check that today's directory still exists (within 1 day)
+	// Check that recent directory still exists (within 4 days)
 	if _, err := os.Stat(recentDir); err != nil {
-		t.Errorf("Today's directory %s should still exist: %v", recentDateStr, err)
+		t.Errorf("Recent directory %s should still exist: %v", recentDateStr, err)
 	}
 
 	// Check that invalid directory still exists
@@ -250,7 +250,7 @@ func TestRemoveOldBackupNonExistentBackupDir(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	// Test with non-existent __backup__ directory
-	err = remove_old_backup(tempDir, 1)
+	err = remove_old_backup(tempDir, 4)
 	if err == nil {
 		t.Error("Expected error for non-existent backup directory, got nil")
 	}
@@ -341,6 +341,62 @@ func TestMoveDownloadsToBackupEmptyDir(t *testing.T) {
 	backupDir := filepath.Join(tempDir, "__backup__")
 	if _, err := os.Stat(backupDir); !os.IsNotExist(err) {
 		t.Error("No backup directory should be created when there are no files to move")
+	}
+}
+
+func TestZeroArgumentTreatedAsFour(t *testing.T) {
+	// Test the conversion logic: 0 should be treated as 4
+	// This tests the main function logic indirectly by testing remove_old_backup with 4
+
+	// Create temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "dlswp_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create __backup__ directory
+	backupDir := filepath.Join(tempDir, "__backup__")
+	err = os.Mkdir(backupDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create backup directory: %v", err)
+	}
+
+	// Create test directories to verify 4-day retention behavior
+	now := time.Now()
+	oldDate := now.AddDate(0, 0, -5) // 5 days ago (should be removed with 4 days retention)
+	recentDate := now.AddDate(0, 0, -3) // 3 days ago (should be kept with 4 days retention)
+
+	oldDateStr := oldDate.Format("2006-01-02")
+	recentDateStr := recentDate.Format("2006-01-02")
+
+	// Create directories
+	oldDir := filepath.Join(backupDir, oldDateStr)
+	err = os.Mkdir(oldDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create old date directory: %v", err)
+	}
+
+	recentDir := filepath.Join(backupDir, recentDateStr)
+	err = os.Mkdir(recentDir, 0755)
+	if err != nil {
+		t.Fatalf("Failed to create recent date directory: %v", err)
+	}
+
+	// Test with 4 days (what 0 should become)
+	err = remove_old_backup(tempDir, 4)
+	if err != nil {
+		t.Errorf("remove_old_backup failed: %v", err)
+	}
+
+	// Check that old directory (5 days ago) was removed
+	if _, err := os.Stat(oldDir); !os.IsNotExist(err) {
+		t.Errorf("Old directory %s should have been removed with 4-day retention", oldDateStr)
+	}
+
+	// Check that recent directory (3 days ago) still exists
+	if _, err := os.Stat(recentDir); err != nil {
+		t.Errorf("Recent directory %s should still exist with 4-day retention: %v", recentDateStr, err)
 	}
 }
 

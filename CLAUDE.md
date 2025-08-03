@@ -21,6 +21,15 @@ Key functions:
 
 ## Build and Run Commands
 
+**IMPORTANT**: After making code changes, always verify that the build succeeds and tests pass:
+```bash
+# Verify build succeeds
+go build -o dlswp main_dlswp.go
+
+# Run all tests to ensure functionality is correct
+go test -v
+```
+
 ### Windows
 ```bash
 # Build the executable (creates dlswp.exe)
@@ -44,10 +53,10 @@ go build -o dlswp main_dlswp.go
 # Alternative build (creates main_dlswp.exe on Windows, main_dlswp on others)
 go build main_dlswp.go
 
-# No arguments: same as "0" - move all files to today's backup, remove all old backups
+# No arguments: same as "0" - move all files to today's backup, keep 4 days of backups
 go run main_dlswp.go
 
-# Explicit 0: move all files to today's backup, remove all old backups
+# Explicit 0: move all files to today's backup, treated as 4 days retention
 go run main_dlswp.go 0
 
 # Keep 3 days: move all files to today's backup, keep last 3 days of backups
@@ -66,7 +75,7 @@ go run main_dlswp.go 0 "/path/to/custom/directory"
   - Optional: defaults to "0" when not specified
   - Used for cleanup: removes backup folders older than specified days from today
   - Files are always moved to today's date backup folder
-  - Special case: 0 = keep only today's backup, remove all older backups
+  - Special case: 0 = treated as 4 days (keeps 4 days of backups)
   - Does NOT filter files by modification date - ALL files are moved
 - Second argument (optional): Root directory path (defaults to OS-specific Downloads folder)
 
@@ -90,5 +99,5 @@ go run main_dlswp.go 0 "/path/to/custom/directory"
 - Skips files/directories prefixed with "__" to avoid interfering with its own backup structure
 - Creates `__backup__` folder structure with date-based subdirectories (YYYY-MM-DD format)
 - Automatically removes backup directories older than specified days from today
-- Default behavior: when no arguments provided, acts as if "0" was specified (most aggressive cleanup)
+- Default behavior: when no arguments provided, acts as if "0" was specified (treated as 4 days retention)
 - Validates arguments: rejects negative values with error message

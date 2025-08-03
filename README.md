@@ -21,7 +21,7 @@
 
 ### Format
 ```
-dlswp [days_offset] [target_directory]
+dlswp [days_to_keep] [target_directory]
 ```
 
 ### Argument Details
@@ -31,19 +31,32 @@ dlswp [days_offset] [target_directory]
   - Number of days of backups to keep from today
   - Files are always moved to today's date backup folder
   - Only affects cleanup: removes backup folders older than specified days from today
-  - **Special case**: 0 = keep only today's backup, remove all older backups
+  - **Special case**: 0 = treated as 4 days (keeps 4 days of backups)
   - **Note**: Does NOT filter files by modification date - ALL files are moved
 - **Second argument (target_directory)**: Optional
   - Root directory path to process
   - Defaults to OS-specific Downloads folder
 
+### Default Behavior (No Arguments)
+
+When no arguments are provided, the program defaults to:
+- First argument: "0" (which is treated as 4 days retention)
+- Second argument: OS-specific Downloads folder
+
+```bash
+# No arguments specified
+dlswp
+# Equivalent to: dlswp 0 [default Downloads folder]
+# Behavior: Move all files to today's backup, keep 4 days of backups
+```
+
 ### Usage Examples
 
 ```bash
-# No arguments: same as "dlswp 0" - move all files to today's backup, remove all old backups
+# No arguments: same as "dlswp 0" - move all files to today's backup, keep 4 days of backups
 dlswp
 
-# Explicit 0: move all files to __backup__/2025-08-03/, keep 0 days (remove all old backups)
+# Explicit 0: move all files to __backup__/2025-08-03/, treated as 4 days (remove backups older than 2025-07-30)
 dlswp 0
 
 # Move all files to __backup__/2025-08-03/, keep 3 days (remove backups older than 2025-07-31)
@@ -59,6 +72,9 @@ dlswp 0 "C:\MyFolder"
 
 # macOS/Linux custom directory with 5 days retention
 dlswp 5 "/path/to/directory"
+
+# Explicit 4: same behavior as dlswp 0
+dlswp 4
 
 # Error: negative values are rejected
 dlswp -1  # Shows error message and exits

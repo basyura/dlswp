@@ -50,6 +50,11 @@ func main() {
 		return
 	}
 
+	// 引数が0の場合は4として扱う
+	if days == 0 {
+		days = 4
+	}
+
 	// download → backup へ移動
 	move_downloads_to_backup(root)
 	// backup 内の古いディレクトリを削除

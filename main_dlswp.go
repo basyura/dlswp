@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -12,10 +13,24 @@ import (
 
 var backup_dir_pattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
+func getDefaultDownloadsPath() string {
+	switch runtime.GOOS {
+	case "windows":
+		return filepath.Join(os.Getenv("USERPROFILE"), "Downloads")
+	case "darwin":
+		return filepath.Join(os.Getenv("HOME"), "Downloads")
+	case "linux":
+		return filepath.Join(os.Getenv("HOME"), "Downloads")
+	default:
+		return filepath.Join(os.Getenv("HOME"), "Downloads")
+	}
+}
+
 func main() {
 	// Check for command line arguments
 	diff := "0"
-	root := filepath.Join(os.Getenv("USERPROFILE"), "Downloads")
+	root := getDefaultDownloadsPath()
+
 	// Parse the argument
 	if len(os.Args) == 2 {
 		diff = os.Args[1]
@@ -111,8 +126,11 @@ func move_downloads_to_backup(root string, targetDate time.Time) {
 
 		newPath := filepath.Join(targetDir, stat.Name())
 		err = os.Rename(path, newPath)
-		fmt.Println(strings.Replace(path, root+"\\", "", 1))
-		fmt.Println("  →", strings.Replace(newPath, root+"\\", "", 1))
+
+		separator := string(filepath.Separator)
+		pathSeparator := root + separator
+		fmt.Println(strings.Replace(path, pathSeparator, "", 1))
+		fmt.Println("  →", strings.Replace(newPath, pathSeparator, "", 1))
 		if err != nil {
 			fmt.Println("  ❗Error moving file:", err)
 		}

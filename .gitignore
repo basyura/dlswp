@@ -1,5 +1,6 @@
 .claude/settings.local.json
-.serena
+.serena/**
+!.serena/project.yml
 dlswp
 *.exe
 *.lock

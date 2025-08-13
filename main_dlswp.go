@@ -13,9 +13,10 @@ import (
 
 const (
 	defaultRetentionDays = 4
-	backupDirName       = "__backup__"
-	dateFormat          = "2006-01-02"
+	backupDirName        = "__backup__"
+	dateFormat           = "2006-01-02"
 )
+
 var backup_dir_pattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
 func getDefaultDownloadsPath() string {
@@ -117,27 +118,31 @@ func moveDownloadsToBackup(root string) error {
 	fmt.Println("date :", date)
 	fmt.Println("")
 
-	// Move paths created on the target date to the new folder
-	targetDir := ""
+	// Get all file paths first
 	paths, err := getFilePaths(root)
 	if err != nil {
 		return fmt.Errorf("failed to get file paths: %w", err)
 	}
 
+	// If no files to move, return early without creating backup folder
+	if len(paths) == 0 {
+		fmt.Println("No files to move.")
+		return nil
+	}
+
+	// Create backup directory only when we have files to move
+	targetDir := filepath.Join(root, backupDirName, date)
+	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
+		return fmt.Errorf("error creating folder %s: %w", targetDir, err)
+	}
+
+	// Move files to backup folder
 	for _, path := range paths {
 		stat, err := os.Stat(path)
 		if err != nil {
 			fmt.Println(path)
 			fmt.Println(err)
 			continue
-		}
-
-		// Create a folder with the target date in the download folder
-		if targetDir == "" {
-			targetDir = filepath.Join(root, backupDirName, date)
-			if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
-				return fmt.Errorf("error creating folder %s: %w", targetDir, err)
-			}
 		}
 
 		newPath := filepath.Join(targetDir, stat.Name())

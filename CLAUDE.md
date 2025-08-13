@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**言語指示**: このリポジトリでの作業時は、必ず日本語で回答してください。
+
 ## Project Overview
 
 This is a Go utility called "dlswp" (Downloads Sweeper) that manages Downloads folder organization by moving files to dated backup folders and cleaning up old backups. The tool helps manage overflowing Downloads folders by backing up and cleaning files, supporting Windows, macOS, and Linux systems with their respective default Downloads folders. It requires manual execution via task scheduler for periodic cleaning.
